@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GA Tag & Index Status Checker
 // @namespace    http://tampermonkey.net/
-// @version      1.5
+// @version      1.6
 // @description  Wyświetla tagi Google Analytics (UA-, G-, GTM-) oraz status indeksowania strony (index/noindex)
 // @author       bkmiecik
 // @match        *://*/*
@@ -13,7 +13,17 @@
 
     window.addEventListener('load', () => {
         const footer = document.querySelector('footer');
-        if (!footer || !/WeNet|csgroup\.pl|pkt\.pl/i.test(footer.innerText)) return;
+
+        const footerText = (footer?.innerText || '').toLowerCase();
+
+        if (
+            !footer ||
+            !(
+                footerText.includes('wenet') ||
+                footerText.includes('csgroup.pl') ||
+                footerText.includes('pkt.pl')
+            )
+        ) return;
 
         const html = document.documentElement.innerHTML;
 
@@ -25,8 +35,14 @@
         // Sprawdzanie meta name="robots"
         let indeksowanie = 'brak tagu — domyślnie: index, follow';
         const robotsMeta = document.querySelector('meta[name="robots"]');
+
         if (robotsMeta && robotsMeta.content) {
-            indeksowanie = robotsMeta.content.toLowerCase().includes('noindex') ? 'noindex' : 'index';
+            const content = robotsMeta.content.toLowerCase();
+            if (content.includes('noindex')) {
+                indeksowanie = 'noindex';
+            } else {
+                indeksowanie = 'index';
+            }
         }
 
         // Tworzenie kontenera
@@ -51,6 +67,7 @@
         container.addEventListener('mouseenter', () => {
             container.style.left = '0px';
         });
+
         container.addEventListener('mouseleave', () => {
             container.style.left = '-220px';
         });
@@ -62,6 +79,7 @@
         title.style.marginBottom = '6px';
         container.appendChild(title);
 
+        // Tagi
         if (unikalneTagi.length > 0) {
             unikalneTagi.forEach(tag => {
                 const p = document.createElement('div');
@@ -74,11 +92,12 @@
             container.appendChild(p);
         }
 
-        // Info o index/noindex
+        // Separator
         const divider = document.createElement('hr');
         divider.style.borderColor = '#00ff88';
         container.appendChild(divider);
 
+        // Index info
         const indexInfo = document.createElement('div');
         const ikona = indeksowanie.includes('noindex') ? '🚫' : '✅';
         indexInfo.innerHTML = `${ikona} <b>Index status:</b><br>${indeksowanie}`;
