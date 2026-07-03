@@ -3,6 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  Sprawdza, czy strona zawiera iframe z Google Maps
+// @author       bkmiecik
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
