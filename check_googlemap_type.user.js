@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Google Maps iframe checker
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Sprawdza, czy strona zawiera iframe z Google Maps
 // @author       bkmiecik
 // @match        *://*/*
@@ -11,36 +11,47 @@
 (function () {
     'use strict';
 
-    function isGoogleMaps(src) {
-        return /google\.[^/]*\/maps|maps\.google|google\.[^/]*\/maps\/embed/i.test(src);
-    }
+    let lastState = null;
+    let timeout = null;
 
     function check() {
         const iframes = document.querySelectorAll("iframe");
 
-        console.log("IFRAMES:", iframes.length);
-
         let found = false;
+        let matches = [];
 
-        iframes.forEach(f => {
-            console.log("SRC:", f.src);
-
-            if (f.src && isGoogleMaps(f.src)) {
-                console.log("✅ GOOGLE MAPS FOUND:", f);
+        for (const f of iframes) {
+            const src = f.src || "";
+            if (/google\.[^/]*\/maps|maps\.google/i.test(src)) {
                 found = true;
+                matches.push(src);
             }
-        });
+        }
 
-        if (!found) {
-            console.log("❌ brak Google Maps iframe");
+        const state = found ? "FOUND" : "NOT_FOUND";
+
+        // ⛔ log tylko jak zmienił się stan
+        if (state !== lastState) {
+            lastState = state;
+
+            if (found) {
+                console.log("✅ Google Maps iframe wykryty", matches);
+            } else {
+                console.log("❌ Brak Google Maps iframe");
+            }
         }
     }
 
-    // pierwsze sprawdzenie
+    function debouncedCheck() {
+        clearTimeout(timeout);
+        timeout = setTimeout(check, 300);
+    }
+
     check();
 
-    // obserwuj dynamiczne zmiany
-    const obs = new MutationObserver(() => check());
-    obs.observe(document.documentElement, { childList: true, subtree: true });
-
+    const obs = new MutationObserver(debouncedCheck);
+    obs.observe(document.documentElement, {
+        childList: true,
+        subtree: true
+    });
 })();
