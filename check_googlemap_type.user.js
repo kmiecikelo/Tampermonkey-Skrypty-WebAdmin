@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Google Maps iframe checker
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Sprawdza, czy strona zawiera iframe z Google Maps
 // @author       bkmiecik
 // @match        *://*/*
@@ -11,32 +11,36 @@
 (function () {
     'use strict';
 
-    function checkGoogleMapsIframe() {
-        const iframes = document.querySelectorAll('iframe');
+    function isGoogleMaps(src) {
+        return /google\.[^/]*\/maps|maps\.google|google\.[^/]*\/maps\/embed/i.test(src);
+    }
+
+    function check() {
+        const iframes = document.querySelectorAll("iframe");
+
+        console.log("IFRAMES:", iframes.length);
 
         let found = false;
 
-        iframes.forEach(iframe => {
-            const src = iframe.src || "";
+        iframes.forEach(f => {
+            console.log("SRC:", f.src);
 
-            if (
-                src.includes("google.com/maps") ||
-                src.includes("maps.google.com") ||
-                src.includes("google.com/maps/embed")
-            ) {
-                console.log("✅ Znaleziono iframe Google Maps:", iframe);
+            if (f.src && isGoogleMaps(f.src)) {
+                console.log("✅ GOOGLE MAPS FOUND:", f);
                 found = true;
             }
         });
 
         if (!found) {
-            console.log("❌ Brak iframe Google Maps.");
+            console.log("❌ brak Google Maps iframe");
         }
     }
 
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", checkGoogleMapsIframe);
-    } else {
-        checkGoogleMapsIframe();
-    }
+    // pierwsze sprawdzenie
+    check();
+
+    // obserwuj dynamiczne zmiany
+    const obs = new MutationObserver(() => check());
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+
 })();
